@@ -1,7 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
@@ -13,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/sashabaranov/go-openai"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,13 +18,8 @@ import (
 // chatCmd represents the chat command
 var chatCmd = &cobra.Command{
 	Use:   "chat",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Initiate a chat conversation with GPT-3.",
+	Long:  `Initiate a chat conversation with GPT-3 with streaming and turn-based chatting.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Set up OpenAI client
 		client := openai.NewClient(viper.GetString("openai-key"))
@@ -53,44 +45,6 @@ func init() {
 	// chatCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-// func chat(client *openai.Client) {
-// 	ctx := context.Background()
-
-// 	req := openai.ChatCompletionRequest{
-// 		Model:     openai.GPT3Dot5Turbo,
-// 		MaxTokens: 200,
-// 		Messages: []openai.ChatCompletionMessage{
-// 			{
-// 				Role:    openai.ChatMessageRoleUser,
-// 				Content: "Good morning! How are you?",
-// 			},
-// 		},
-// 		Stream: true,
-// 	}
-// 	stream, err := client.CreateChatCompletionStream(ctx, req)
-// 	if err != nil {
-// 		fmt.Printf("ChatCompletionStream error: %v\n", err)
-// 		return
-// 	}
-// 	defer stream.Close()
-
-// 	fmt.Printf("Stream response: ")
-// 	for {
-// 		response, err := stream.Recv()
-// 		if errors.Is(err, io.EOF) {
-// 			fmt.Println("\nStream finished")
-// 			return
-// 		}
-
-// 		if err != nil {
-// 			fmt.Printf("\nStream error: %v\n", err)
-// 			return
-// 		}
-
-// 		fmt.Printf(response.Choices[0].Delta.Content)
-// 	}
-// }
-
 func chat(client *openai.Client) {
 	ctx := context.Background()
 	reader := bufio.NewReader(os.Stdin)
@@ -98,7 +52,7 @@ func chat(client *openai.Client) {
 	messages := []openai.ChatCompletionMessage{}
 
 	for {
-		fmt.Print("You: ")
+		color.Magenta("\nYou: ")
 		userInput, _ := reader.ReadString('\n')
 		userInput = strings.TrimSpace(userInput)
 
@@ -122,16 +76,17 @@ func chat(client *openai.Client) {
 		}
 
 		// Receive responses from the OpenAI API
-		fmt.Print("Assistant: ")
+		color.Cyan("OpenAI: ")
 		fullResponse := ""
 		for {
 			response, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
-				fmt.Println("\nStream finished")
+				color.Green("\nOver.\n\n")
 				break
 			}
 
 			if err != nil {
+				color.Red("Error: ")
 				fmt.Printf("\nStream error: %v\n", err)
 				break
 			}
