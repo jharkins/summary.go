@@ -45,16 +45,28 @@ func init() {
 	// chatCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
+func printChatHelp() {
+	red := color.New(color.FgRed).SprintFunc()
+	fmt.Printf("To end the chat, type %s or %s.\n", red("exit"), red("quit"))
+}
+
 func chat(client *openai.Client) {
+	printChatHelp()
+
 	ctx := context.Background()
 	reader := bufio.NewReader(os.Stdin)
 
 	messages := []openai.ChatCompletionMessage{}
+	// chatTranscript := ""
 
 	for {
 		color.Magenta("\nYou: ")
 		userInput, _ := reader.ReadString('\n')
 		userInput = strings.TrimSpace(userInput)
+
+		if userInput == "exit" || userInput == "quit" {
+			break
+		}
 
 		// Add user message to the list of messages
 		messages = append(messages, openai.ChatCompletionMessage{
