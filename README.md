@@ -9,6 +9,10 @@ Welcome to Summary.go, a GPT Chat Assistant CLI! This project is a command-line 
 - Built with Cobra, a popular Go library for creating CLI applications
 - Leverages the OpenAI GPT language model for high-quality AI-generated responses
 
+## Requirements
+
+- Go 1.17 or later: [Download and Install Go](https://golang.org/dl/)
+
 ## Installation
 
 To install Summary, follow these steps:
