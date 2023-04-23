@@ -5,8 +5,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,13 +20,8 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "summary.go",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "CLI Tool using OpenAI",
+	Long:  `A simple command line interface to to use OpenAI API.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -39,6 +37,8 @@ func Execute() {
 }
 
 func init() {
+	printBanner()
+
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -54,13 +54,14 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	// Find home directory.
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".summary.go" (without extension).
 		viper.AddConfigPath(home)
@@ -73,5 +74,45 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	} else {
+		viper.SetConfigFile(filepath.Join(home, ".summary.go.yaml"))
+		err = viper.SafeWriteConfig()
+		if err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				err = viper.WriteConfig()
+				if err != nil {
+					fmt.Println("Error creating config file:", err)
+					os.Exit(1)
+				}
+			} else {
+				fmt.Println("Error saving config file:", err)
+				os.Exit(1)
+			}
+		}
+	}
+
+	checkOpenAIKey()
+}
+
+func checkOpenAIKey() {
+	openAIKey := viper.GetString("openai-key")
+
+	if openAIKey == "" {
+		fmt.Println("It looks like you haven't set your OpenAI API key.")
+		fmt.Print("Please enter your OpenAI API key: ")
+
+		reader := bufio.NewReader(os.Stdin)
+		openAIKey, _ = reader.ReadString('\n')
+		openAIKey = strings.TrimSpace(openAIKey)
+
+		// Save the OpenAI key to the config file
+		viper.Set("openai-key", openAIKey)
+		err := viper.WriteConfig()
+		if err != nil {
+			fmt.Println("Error saving OpenAI API key to config file:", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Your OpenAI API key has been saved to the config file.")
 	}
 }
