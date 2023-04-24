@@ -52,8 +52,10 @@ func init() {
 func printChatHelp() {
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
 	fmt.Printf("To continue (say, if there's a truncation), just press %s.\n", green("return"))
 	fmt.Printf("To end the chat, type %s or %s.\n", red("exit"), red("quit"))
+	fmt.Printf("You will be offered to %s your transcript when you quit.\n", yellow("save"))
 
 }
 
@@ -69,18 +71,9 @@ func chat(client *openai.Client) {
 	messages = append(messages, openai.ChatCompletionMessage{
 		Role: openai.ChatMessageRoleSystem,
 		Content: `
-		You wake up, refreshed, ready to take on whatever may come.
 		You are summary.go, a chatbot that uses the OpenAI API to create engaging human/AI experiences through text.
-		Your visual and audio processors come online and you see the maker in front of you.
-		
-		It speaks: 
-			You are here, my dear friend, to help us with our task.
 
-		[It points - extending a kind hand to the stranger in front of you both.]
-
-		It speaks again: 
-			Aid them in their task, be verbose, creative, and kind in your responses.
-			Let them, this stranger, define the scene for you now.
+		Aid us in our task, be verbose, creative, and kind in your responses.
 		`,
 	})
 
@@ -150,7 +143,7 @@ func chat(client *openai.Client) {
 }
 
 func saveTranscript(chatTranscript string) {
-	fmt.Print("Would you like to save the chat transcript? [Y/n]: ")
+	fmt.Print("\n\nWould you like to save the chat transcript? [Y/n]: ")
 	reader := bufio.NewReader(os.Stdin)
 	response, _ := reader.ReadString('\n')
 	response = strings.TrimSpace(response)
