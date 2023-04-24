@@ -37,25 +37,25 @@ var chatCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(chatCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// chatCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// chatCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func printChatHelp() {
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
+	fmt.Println()
 	fmt.Printf("To continue (say, if there's a truncation), just press %s.\n", green("return"))
-	fmt.Printf("To end the chat, type %s or %s.\n", red("exit"), red("quit"))
-	fmt.Printf("You will be offered to %s your transcript when you quit.\n", yellow("save"))
+	fmt.Printf("Type %s to write a transcript.\n", yellow("save"))
+	fmt.Printf("To %s and end the chat, type %s or %s.\n", yellow("save"), red("exit"), red("quit"))
+	fmt.Println()
+
+}
+
+func getUserInput(reader *bufio.Reader) string {
+	color.Magenta("\nYou: ")
+	userInput, _ := reader.ReadString('\n')
+	userInput = strings.TrimSpace(userInput)
+	return userInput
 
 }
 
@@ -80,12 +80,20 @@ func chat(client *openai.Client) {
 	chatTranscript := ""
 
 	for {
-		color.Magenta("\nYou: ")
-		userInput, _ := reader.ReadString('\n')
-		userInput = strings.TrimSpace(userInput)
+		userInput := getUserInput(reader)
 
 		if userInput == "exit" || userInput == "quit" {
 			break
+		}
+
+		if userInput == "save" {
+			saveTranscript(chatTranscript)
+			continue
+		}
+
+		if userInput == "help" {
+			printChatHelp()
+			continue
 		}
 
 		// Add user message to the list of messages
@@ -101,10 +109,11 @@ func chat(client *openai.Client) {
 			Messages:  messages,
 			Stream:    true,
 		}
+
 		stream, err := client.CreateChatCompletionStream(ctx, req)
 		if err != nil {
 			fmt.Printf("ChatCompletionStream error: %v\n", err)
-			return
+			break
 		}
 
 		// Receive responses from the OpenAI API

@@ -21,3 +21,6 @@
 go.work
 
 .env
+
+# Built file
+summary
