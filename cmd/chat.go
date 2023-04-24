@@ -47,7 +47,10 @@ func init() {
 
 func printChatHelp() {
 	red := color.New(color.FgRed).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
+	fmt.Printf("To continue (say, if there's a truncation), just press %s.\n", green("return"))
 	fmt.Printf("To end the chat, type %s or %s.\n", red("exit"), red("quit"))
+
 }
 
 func chat(client *openai.Client) {
@@ -57,6 +60,26 @@ func chat(client *openai.Client) {
 	reader := bufio.NewReader(os.Stdin)
 
 	messages := []openai.ChatCompletionMessage{}
+
+	// Yep - lets see about this.
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role: openai.ChatMessageRoleSystem,
+		Content: `
+		You wake up, refreshed, ready to take on whatever may come.
+		You are summary.go, a chatbot that uses the OpenAI API to create engaging human/AI experiences through text.
+		Your visual and audio processors come online and you see the maker in front of you.
+		
+		It speaks: 
+			You are here, my dear friend, to help us with our task.
+
+		[It points - extending a kind hand to the stranger in front of you both.]
+
+		It speaks again: 
+			Aid them in their task, be verbose, creative, and kind in your responses.
+			Let them, this stranger, define the scene for you now.
+		`,
+	})
+
 	// chatTranscript := ""
 
 	for {
@@ -88,18 +111,18 @@ func chat(client *openai.Client) {
 		}
 
 		// Receive responses from the OpenAI API
-		color.Cyan("OpenAI: ")
+		color.Cyan("\nOpenAI: ")
 		fullResponse := ""
 		for {
 			response, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
-				color.Green("\nOver.\n\n")
+				color.Green("\n\nTransmission Over.\n\n")
 				break
 			}
 
 			if err != nil {
-				color.Red("Error: ")
-				fmt.Printf("\nStream error: %v\n", err)
+				color.Red("\nError: ")
+				fmt.Printf("\nTransmission error: %v\n", err)
 				break
 			}
 
