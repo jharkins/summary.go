@@ -6,8 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/sashabaranov/go-openai"
@@ -80,7 +84,7 @@ func chat(client *openai.Client) {
 		`,
 	})
 
-	// chatTranscript := ""
+	chatTranscript := ""
 
 	for {
 		color.Magenta("\nYou: ")
@@ -130,6 +134,9 @@ func chat(client *openai.Client) {
 			fullResponse += response.Choices[0].Delta.Content
 		}
 
+		chatTranscript += "You:\n " + userInput + "\n\n"
+		chatTranscript += "Assistant:\n " + fullResponse + "\n\n\n"
+
 		// Add the assistant's response to the list of messages
 		messages = append(messages, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleAssistant,
@@ -137,5 +144,42 @@ func chat(client *openai.Client) {
 		})
 
 		stream.Close()
+	}
+
+	saveTranscript(chatTranscript)
+}
+
+func saveTranscript(chatTranscript string) {
+	fmt.Print("Would you like to save the chat transcript? [Y/n]: ")
+	reader := bufio.NewReader(os.Stdin)
+	response, _ := reader.ReadString('\n')
+	response = strings.TrimSpace(response)
+
+	if response == "Y" || response == "y" || response == "" {
+		usr, err := user.Current()
+		if err != nil {
+			fmt.Println("Error retrieving user's home directory:", err)
+			return
+		}
+
+		timestamp := time.Now().Format("2006-01-02_15-04-05")
+		filename := fmt.Sprintf("summary_go_chat_%s.txt", timestamp)
+		dir := filepath.Join(usr.HomeDir, "summary_go_chats")
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			fmt.Println("Error creating chat directory:", err)
+			return
+		}
+
+		filePath := filepath.Join(dir, filename)
+		err = ioutil.WriteFile(filePath, []byte(chatTranscript), 0644)
+		if err != nil {
+			fmt.Println("Error saving chat transcript:", err)
+			return
+		}
+
+		fmt.Printf("Chat transcript saved to: %s\n", filePath)
+	} else {
+		fmt.Println("Chat transcript not saved.")
 	}
 }
